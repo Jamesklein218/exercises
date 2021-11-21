@@ -1,8 +1,13 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+// import axios from 'axios'
 import SearchFilter from './components/searchFilter'
 import Persons from './components/Persons'
 import PersonForm from './components/PersonForm'
+import services from './services'
 
+// Function to check 
+// if the subStr is in the str 
+// and at the beginning
 const isMatched = (str, subStr) => {
     str = str.toLowerCase()
     subStr = subStr.toLowerCase()
@@ -17,15 +22,10 @@ const isMatched = (str, subStr) => {
 }
 
 const App = () => {
-    // Var
-    const [persons, setPersons] = useState([
-        { name: 'Arto Hellas', number: '040-123456', id: 1 },
-        { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-        { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-        { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
-    ])
+    console.log("RENDER")
 
-    // State
+    // Declaration
+    const [persons, setPersons] = useState([])
     const [newName, setNewName] = useState('')
     const [newNumber, setNewNumber] = useState('')
     const [newFilter, setNewFilter] = useState('')
@@ -34,6 +34,7 @@ const App = () => {
             return isMatched(person.name, newFilter)
         })
 
+    //Effect
     const addPerson = event => {
         event.preventDefault()
 
@@ -42,16 +43,27 @@ const App = () => {
         } else if (persons.findIndex(el => el.name === newName) !== -1) {
             alert(`${newName} is already added to phonebook.`)
         } else {
-            setPersons(persons.concat({
+            services.create({
                 id: newName,
                 name: newName,
                 number: newNumber
-            }))
-            setNewName('')
-            setNewNumber('')
+            })
+                .then(res => {
+                    setPersons(persons.concat(res))
+                    setNewName('')
+                    setNewNumber('')
+                })
         }
     }
-
+    const deletePerson = event => {
+        // confirm("Do you want to delete this.")
+        services.delete(event.target.id)
+            .then(res => {
+                setPersons(persons.filter(person => {
+                    return !(person.id === event.target.id)
+                }))
+            })
+    }
     const handleNewName = event => {
         setNewName(event.target.value)
     }
@@ -62,6 +74,15 @@ const App = () => {
         setNewFilter(event.target.value)
     }
 
+    //Effect    
+    useEffect(() => {
+        services.getAll()
+            .then(res => {
+                setPersons(res)
+            })
+    }, [])
+
+    // Elements
     return (
         <div>
             <h2>Phonebook</h2>
@@ -75,7 +96,7 @@ const App = () => {
                 handleNewNumber={handleNewNumber}
             />
             <h3>Numbers</h3>
-            <Persons display={display} />
+            <Persons display={display} deletePerson={deletePerson} />
 
         </div>
 
